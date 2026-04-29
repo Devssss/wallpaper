@@ -1,6 +1,6 @@
 {
   "name": "VibeWall",
-  "description": "Generate unique 9:16 phone wallpapers based on your vibe using Gemini AI.",
+  "description": "Premium AI wallpaper engine for mobile. Generate, remix, and style 9:16 vertical art using advanced neural models.",
   "requestFramePermissions": [],
   "majorCapabilities": ["image_generation"]
 }

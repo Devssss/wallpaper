@@ -303,10 +303,14 @@ export default function Home() {
             >
               {results.map((img, i) => (
                 <motion.div
-                  key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.1 }}
+                  key={`${i}-${img.url.substring(0, 20)}`}
+                  initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{ 
+                    duration: 0.5, 
+                    delay: i * 0.05, 
+                    ease: [0.16, 1, 0.3, 1] 
+                  }}
                   onClick={() => setSelectedImage(img)}
                   className={cn(
                     "group relative rounded-2xl overflow-hidden glass border-white/5 cursor-pointer active:scale-95 transition-all duration-300 shadow-lg",
