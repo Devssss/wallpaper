@@ -23,6 +23,7 @@ export default function Home() {
   const [results, setResults] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
+  const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
   
   // Farcaster SDK init
   useEffect(() => {
@@ -57,10 +58,30 @@ export default function Home() {
     }
   };
 
-  const handleDownload = (imgUrl: string) => {
+  const handleDownload = async (imgUrl: string, format: 'png' | 'jpg' = 'png') => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    await new Promise((resolve) => {
+      img.onload = resolve;
+      img.src = imgUrl;
+    });
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+    if (ctx) {
+      if (format === 'jpg') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0);
+    }
+
+    const dataUrl = canvas.toDataURL(format === 'jpg' ? 'image/jpeg' : 'image/png', 0.9);
     const link = document.createElement("a");
-    link.href = imgUrl;
-    link.download = `vibewall-${Date.now()}.png`;
+    link.href = dataUrl;
+    link.download = `vibewall-${Date.now()}.${format}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -212,34 +233,52 @@ export default function Home() {
               />
             </div>
 
-            <div className="w-full max-w-sm p-6 grid grid-cols-2 gap-3 pb-12">
-              <button
-                onClick={() => handleDownload(selectedImage.url)}
-                className="w-full bg-white text-slate-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
-              >
-                <Download size={20} />
-                Download
-              </button>
-              <button
-                onClick={() => handleGenerate(selectedImage.prompt)}
-                disabled={loading}
-                className="w-full bg-cyan-500 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/20 active:scale-95 hover:bg-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading && loadingType === "remix" ? (
-                  <>
-                    <Loader2 className="animate-spin" size={20} />
-                    Remixing...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCcw size={20} />
-                    Remix
-                  </>
-                )}
-              </button>
+            <div className="w-full max-w-sm p-6 space-y-4 pb-12">
+              <div className="flex gap-2 p-1 glass rounded-xl w-fit mx-auto">
+                {(['png', 'jpg'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setDownloadFormat(f)}
+                    className={cn(
+                      "px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                      downloadFormat === f ? "bg-white text-black" : "text-white/40 hover:text-white"
+                    )}
+                  >
+                    {f}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleDownload(selectedImage.url, downloadFormat)}
+                  className="w-full bg-white text-slate-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
+                >
+                  <Download size={20} />
+                  {downloadFormat.toUpperCase()}
+                </button>
+                <button
+                  onClick={() => handleGenerate(selectedImage.prompt)}
+                  disabled={loading}
+                  className="w-full bg-cyan-500 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/20 active:scale-95 hover:bg-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading && loadingType === "remix" ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      Refining...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCcw size={20} />
+                      Remix
+                    </>
+                  )}
+                </button>
+              </div>
+              
               <button 
                 onClick={() => setSelectedImage(null)}
-                className="col-span-2 text-slate-500 text-sm font-medium py-2"
+                className="w-full text-slate-500 text-sm font-medium py-2"
               >
                 Cancel
               </button>
