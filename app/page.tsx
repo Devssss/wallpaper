@@ -25,7 +25,7 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
-  const [downloadResolution, setDownloadResolution] = useState<'Standard' | 'HD' | '4K'>('Standard');
+  const [downloadResolution, setDownloadResolution] = useState<'Standard' | 'HD' | '4K' | '8K'>('Standard');
   const [useCustomRatio, setUseCustomRatio] = useState(false);
   const [customRatio, setCustomRatio] = useState({ w: 9, h: 16 });
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
@@ -121,7 +121,7 @@ export default function Home() {
   const handleDownload = async (
     imgUrl: string, 
     format: 'png' | 'jpg' = 'png', 
-    resolution: 'Standard' | 'HD' | '4K' = 'Standard',
+    resolution: 'Standard' | 'HD' | '4K' | '8K' = 'Standard',
     targetRatio?: { w: number, h: number }
   ) => {
     const canvas = document.createElement('canvas');
@@ -136,7 +136,8 @@ export default function Home() {
     const multipliers = {
       'Standard': 1,
       'HD': 2,
-      '4K': 4
+      '4K': 4,
+      '8K': 8
     };
     const scale = multipliers[resolution];
 
@@ -566,7 +567,7 @@ export default function Home() {
                 <div className="flex justify-between items-center px-1">
                   <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Res</span>
                   <div className="flex gap-1">
-                    {(['Standard', 'HD', '4K'] as const).map((r) => (
+                    {(['Standard', 'HD', '4K', '8K'] as const).map((r) => (
                       <button
                         key={r}
                         onClick={() => setDownloadResolution(r)}
@@ -577,7 +578,7 @@ export default function Home() {
                             : "bg-transparent border-transparent text-white/40 hover:text-white"
                         )}
                       >
-                        {r}
+                        {r === '8K' ? '8K Ultra' : r}
                       </button>
                     ))}
                   </div>
