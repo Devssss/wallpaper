@@ -26,10 +26,14 @@ export async function generateWallpapers(vibe: string, referenceImage?: string):
     };
 
     if (referenceImage) {
-      // For remix, we could add the image as context, but gemini-2.5-flash-image 
-      // primarily generates from text. We'll use the prompt for now 
-      // or try to incorporate the image if supported.
-      // contents.parts.unshift({ inlineData: { data: referenceImage.split(',')[1], mimeType: 'image/png' } });
+      // For remix, add the image as context. Extract base64 if it's a data URL.
+      const base64Data = referenceImage.split(',')[1] || referenceImage;
+      contents.parts.unshift({ 
+        inlineData: { 
+          data: base64Data, 
+          mimeType: 'image/png' 
+        } 
+      });
     }
 
     // We want 4 variations. Nano banana usually returns 1. 

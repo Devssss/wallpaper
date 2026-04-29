@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 export default function Home() {
   const [vibe, setVibe] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingType, setLoadingType] = useState<"generate" | "remix" | null>(null);
   const [results, setResults] = useState<GeneratedImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
@@ -40,6 +41,7 @@ export default function Home() {
     if (!prompt.trim()) return;
 
     setLoading(true);
+    setLoadingType(remixVibe ? "remix" : "generate");
     try {
       if (results.length > 0) {
         setHistory(prev => [results, ...prev].slice(0, 10));
@@ -51,6 +53,7 @@ export default function Home() {
       console.error(err);
     } finally {
       setLoading(false);
+      setLoadingType(null);
     }
   };
 
@@ -168,7 +171,9 @@ export default function Home() {
         {loading && results.length === 0 && (
            <div className="flex flex-col items-center justify-center py-20 text-center">
             <Loader2 className="animate-spin text-cyan-400/40 mb-4" size={48} />
-            <p className="text-xs text-slate-500 uppercase tracking-widest animate-pulse">Engaging Neural Engines...</p>
+            <p className="text-xs text-slate-500 uppercase tracking-widest animate-pulse">
+              {loadingType === "remix" ? "Iterating Aesthetics..." : "Engaging Neural Engines..."}
+            </p>
           </div>
         )}
       </div>
@@ -217,10 +222,20 @@ export default function Home() {
               </button>
               <button
                 onClick={() => handleGenerate(selectedImage.prompt)}
-                className="w-full bg-cyan-500 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/20 active:scale-95 hover:bg-cyan-400 transition-all"
+                disabled={loading}
+                className="w-full bg-cyan-500 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/20 active:scale-95 hover:bg-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <RefreshCcw size={20} />
-                Remix
+                {loading && loadingType === "remix" ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Remixing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCcw size={20} />
+                    Remix
+                  </>
+                )}
               </button>
               <button 
                 onClick={() => setSelectedImage(null)}
@@ -245,7 +260,12 @@ export default function Home() {
               onClick={() => setResults(batch)}
               className="flex-shrink-0 w-10 h-10 rounded-xl overflow-hidden border border-white/10 ring-2 ring-transparent hover:ring-cyan-500/40 transition-all"
              >
-               <img src={batch[0].url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+               <img 
+                 src={batch[0].url} 
+                 alt={`History batch ${i}`}
+                 className="w-full h-full object-cover" 
+                 referrerPolicy="no-referrer" 
+               />
              </button>
            ))}
          </div>
