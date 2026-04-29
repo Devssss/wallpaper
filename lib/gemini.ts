@@ -9,10 +9,10 @@ export interface GeneratedImage {
   prompt: string;
 }
 
-export async function generateWallpapers(vibe: string, referenceImage?: string): Promise<GeneratedImage[]> {
+export async function generateWallpapers(vibe: string, referenceImage?: string, aspectRatio: string = "9:16"): Promise<GeneratedImage[]> {
   const model = "gemini-2.5-flash-image"; // Default image generation model
   
-  const prompt = `Create a striking mobile phone wallpaper (9:16 aspect ratio). 
+  const prompt = `Create a striking artistic image (${aspectRatio} aspect ratio). 
   Vibe: ${vibe}. 
   Style: Artistic, high-quality, professional digital art, aesthetic, trending on Pinterest. 
   Resolution: High resolution, sharp details.
@@ -44,7 +44,7 @@ export async function generateWallpapers(vibe: string, referenceImage?: string):
         contents,
         config: {
           imageConfig: {
-            aspectRatio: "9:16",
+            aspectRatio: aspectRatio as any,
           }
         }
       });

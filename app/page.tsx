@@ -24,6 +24,14 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
+  const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
+
+  const aspectClasses = {
+    "9:16": "aspect-[9/16]",
+    "16:9": "aspect-[16/9]",
+    "1:1": "aspect-square",
+    "4:5": "aspect-[4/5]",
+  };
   
   // Farcaster SDK init
   useEffect(() => {
@@ -47,7 +55,7 @@ export default function Home() {
       if (results.length > 0) {
         setHistory(prev => [results, ...prev].slice(0, 10));
       }
-      const newImages = await generateWallpapers(prompt, selectedImage?.url);
+      const newImages = await generateWallpapers(prompt, selectedImage?.url, aspectRatio);
       setResults(newImages);
       setSelectedImage(null);
     } catch (err) {
@@ -138,6 +146,24 @@ export default function Home() {
             )}
           </button>
         </div>
+
+        {/* Aspect Ratio Selector */}
+        <div className="flex gap-2 mt-4 pt-4 border-t border-white/5">
+          {(["9:16", "1:1", "4:5", "16:9"] as const).map((ratio) => (
+            <button
+              key={ratio}
+              onClick={() => setAspectRatio(ratio)}
+              className={cn(
+                "flex-1 py-2 rounded-xl text-[10px] font-bold transition-all border",
+                aspectRatio === ratio
+                  ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-400"
+                  : "bg-white/5 border-transparent text-white/40 hover:text-white/60"
+              )}
+            >
+              {ratio}
+            </button>
+          ))}
+        </div>
       </motion.div>
 
       {/* Grid Results */}
@@ -158,7 +184,10 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
                   onClick={() => setSelectedImage(img)}
-                  className="group relative aspect-[9/16] rounded-2xl overflow-hidden glass border-white/5 cursor-pointer active:scale-95 transition-all duration-300 shadow-lg"
+                  className={cn(
+                    "group relative rounded-2xl overflow-hidden glass border-white/5 cursor-pointer active:scale-95 transition-all duration-300 shadow-lg",
+                    aspectClasses[aspectRatio]
+                  )}
                 >
                   <img 
                     src={img.url} 
@@ -228,7 +257,10 @@ export default function Home() {
               <motion.img 
                 layoutId={`img-${selectedImage.url}`}
                 src={selectedImage.url} 
-                className="w-full h-full object-cover rounded-[32px] shadow-2xl border border-white/20"
+                className={cn(
+                  "w-full h-auto max-h-full object-contain rounded-[32px] shadow-2xl border border-white/20",
+                   aspectClasses[aspectRatio]
+                )}
                 referrerPolicy="no-referrer"
               />
             </div>
