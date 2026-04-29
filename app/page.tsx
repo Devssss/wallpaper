@@ -26,6 +26,8 @@ export default function Home() {
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
   const [downloadResolution, setDownloadResolution] = useState<'Standard' | 'HD' | '4K'>('Standard');
+  const [useCustomRatio, setUseCustomRatio] = useState(false);
+  const [customRatio, setCustomRatio] = useState({ w: 9, h: 16 });
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
   const [selectedStyle, setSelectedStyle] = useState<string>("Artistic");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -116,7 +118,12 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async (imgUrl: string, format: 'png' | 'jpg' = 'png', resolution: 'Standard' | 'HD' | '4K' = 'Standard') => {
+  const handleDownload = async (
+    imgUrl: string, 
+    format: 'png' | 'jpg' = 'png', 
+    resolution: 'Standard' | 'HD' | '4K' = 'Standard',
+    targetRatio?: { w: number, h: number }
+  ) => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
@@ -133,8 +140,33 @@ export default function Home() {
     };
     const scale = multipliers[resolution];
 
-    canvas.width = img.width * scale;
-    canvas.height = img.height * scale;
+    let drawWidth = img.width;
+    let drawHeight = img.height;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (targetRatio && targetRatio.w > 0 && targetRatio.h > 0) {
+      const targetAspect = targetRatio.w / targetRatio.h;
+      const originalAspect = img.width / img.height;
+
+      if (originalAspect > targetAspect) {
+        // Image is wider than target ratio
+        drawWidth = img.height * targetAspect;
+        drawHeight = img.height;
+        offsetX = (img.width - drawWidth) / 2;
+      } else {
+        // Image is taller than target ratio
+        drawWidth = img.width;
+        drawHeight = img.width / targetAspect;
+        offsetY = (img.height - drawHeight) / 2;
+      }
+
+      canvas.width = drawWidth * scale;
+      canvas.height = drawHeight * scale;
+    } else {
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+    }
 
     if (ctx) {
       if (format === 'jpg') {
@@ -143,7 +175,11 @@ export default function Home() {
       }
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(
+        img, 
+        offsetX, offsetY, drawWidth, drawHeight, // source
+        0, 0, canvas.width, canvas.height // destination
+      );
     }
 
     const dataUrl = canvas.toDataURL(format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95);
@@ -546,11 +582,54 @@ export default function Home() {
                     ))}
                   </div>
                 </div>
+                <div className="flex flex-col gap-2 pt-2 mt-2 border-t border-white/5 px-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Crop Ratio</span>
+                    <button 
+                      onClick={() => setUseCustomRatio(!useCustomRatio)}
+                      className={cn(
+                        "text-[8px] uppercase tracking-wider font-bold px-2 py-0.5 rounded border transition-all",
+                        useCustomRatio ? "bg-cyan-500/20 border-cyan-500/50 text-cyan-400" : "bg-white/5 border-white/10 text-white/30"
+                      )}
+                    >
+                      {useCustomRatio ? "Custom On" : "Original"}
+                    </button>
+                  </div>
+                  
+                  {useCustomRatio && (
+                    <div className="flex gap-2 items-center animate-in fade-in slide-in-from-top-1 duration-300">
+                      <div className="flex-1 flex items-center bg-white/5 rounded-lg border border-white/10 px-2 h-8">
+                        <span className="text-[8px] text-white/20 mr-2 uppercase">W</span>
+                        <input 
+                          type="number" 
+                          value={customRatio.w}
+                          onChange={(e) => setCustomRatio(prev => ({ ...prev, w: parseInt(e.target.value) || 1 }))}
+                          className="w-full bg-transparent text-xs text-white focus:outline-none"
+                        />
+                      </div>
+                      <span className="text-white/20">:</span>
+                      <div className="flex-1 flex items-center bg-white/5 rounded-lg border border-white/10 px-2 h-8">
+                        <span className="text-[8px] text-white/20 mr-2 uppercase">H</span>
+                        <input 
+                          type="number" 
+                          value={customRatio.h}
+                          onChange={(e) => setCustomRatio(prev => ({ ...prev, h: parseInt(e.target.value) || 1 }))}
+                          className="w-full bg-transparent text-xs text-white focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => handleDownload(selectedImage.url, downloadFormat, downloadResolution)}
+                  onClick={() => handleDownload(
+                    selectedImage.url, 
+                    downloadFormat, 
+                    downloadResolution, 
+                    useCustomRatio ? customRatio : undefined
+                  )}
                   className="w-full bg-white text-slate-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
                 >
                   <Download size={20} />
