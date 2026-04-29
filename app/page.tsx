@@ -25,6 +25,7 @@ export default function Home() {
   const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
+  const [downloadResolution, setDownloadResolution] = useState<'Standard' | 'HD' | '4K'>('Standard');
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
   const [selectedStyle, setSelectedStyle] = useState<string>("Artistic");
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -115,7 +116,7 @@ export default function Home() {
     }
   };
 
-  const handleDownload = async (imgUrl: string, format: 'png' | 'jpg' = 'png') => {
+  const handleDownload = async (imgUrl: string, format: 'png' | 'jpg' = 'png', resolution: 'Standard' | 'HD' | '4K' = 'Standard') => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     const img = new Image();
@@ -125,20 +126,30 @@ export default function Home() {
       img.src = imgUrl;
     });
 
-    canvas.width = img.width;
-    canvas.height = img.height;
+    const multipliers = {
+      'Standard': 1,
+      'HD': 2,
+      '4K': 4
+    };
+    const scale = multipliers[resolution];
+
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+
     if (ctx) {
       if (format === 'jpg') {
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-      ctx.drawImage(img, 0, 0);
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     }
 
-    const dataUrl = canvas.toDataURL(format === 'jpg' ? 'image/jpeg' : 'image/png', 0.9);
+    const dataUrl = canvas.toDataURL(format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95);
     const link = document.createElement("a");
     link.href = dataUrl;
-    link.download = `vibewall-${Date.now()}.${format}`;
+    link.download = `vibewall-${resolution}-${Date.now()}.${format}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -497,28 +508,53 @@ export default function Home() {
             </div>
 
             <div className="w-full max-w-sm p-6 space-y-4 pb-12">
-              <div className="flex gap-2 p-1 glass rounded-xl w-fit mx-auto">
-                {(['png', 'jpg'] as const).map((f) => (
-                  <button
-                    key={f}
-                    onClick={() => setDownloadFormat(f)}
-                    className={cn(
-                      "px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
-                      downloadFormat === f ? "bg-white text-black" : "text-white/40 hover:text-white"
-                    )}
-                  >
-                    {f}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-4 p-4 glass rounded-[24px] border border-white/5">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Format</span>
+                  <div className="flex gap-2 p-1 bg-white/5 rounded-lg">
+                    {(['png', 'jpg'] as const).map((f) => (
+                      <button
+                        key={f}
+                        onClick={() => setDownloadFormat(f)}
+                        className={cn(
+                          "px-4 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
+                          downloadFormat === f ? "bg-white text-black" : "text-white/40 hover:text-white"
+                        )}
+                      >
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Res</span>
+                  <div className="flex gap-1">
+                    {(['Standard', 'HD', '4K'] as const).map((r) => (
+                      <button
+                        key={r}
+                        onClick={() => setDownloadResolution(r)}
+                        className={cn(
+                          "px-3 py-1 rounded-md text-[10px] font-bold transition-all border",
+                          downloadResolution === r 
+                            ? "bg-cyan-500/10 border-cyan-500/50 text-cyan-400" 
+                            : "bg-transparent border-transparent text-white/40 hover:text-white"
+                        )}
+                      >
+                        {r}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => handleDownload(selectedImage.url, downloadFormat)}
+                  onClick={() => handleDownload(selectedImage.url, downloadFormat, downloadResolution)}
                   className="w-full bg-white text-slate-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
                 >
                   <Download size={20} />
-                  {downloadFormat.toUpperCase()}
+                  Export
                 </button>
                 <button
                   onClick={() => handleGenerate(selectedImage.prompt)}
