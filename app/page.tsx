@@ -461,6 +461,41 @@ export default function Home() {
               />
             </div>
 
+            <div className="w-full max-w-sm px-6 pt-2 pb-6">
+              <div className="glass rounded-[24px] p-5 space-y-4 border border-white/10 shadow-xl">
+                <div className="space-y-1">
+                  <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Vibe Prompt</span>
+                  <p className="text-white text-sm leading-relaxed font-medium">&quot;{selectedImage.prompt}&quot;</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-white/5">
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Style</span>
+                    <p className="text-white text-xs">{selectedImage.style || "Artistic"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Ratio</span>
+                    <p className="text-white text-xs">{selectedImage.aspectRatio || "9:16"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Creativity</span>
+                    <p className="text-white text-xs">{selectedImage.creativity?.toFixed(1) || "1.0"}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Format</span>
+                    <p className="text-white text-xs uppercase">{downloadFormat}</p>
+                  </div>
+                </div>
+
+                {selectedImage.negativePrompt && (
+                  <div className="space-y-1 pt-2 border-t border-white/5">
+                    <span className="text-[10px] uppercase tracking-widest text-white/40 font-bold">Excluded</span>
+                    <p className="text-white/60 text-[11px] leading-tight italic">{selectedImage.negativePrompt}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="w-full max-w-sm p-6 space-y-4 pb-12">
               <div className="flex gap-2 p-1 glass rounded-xl w-fit mx-auto">
                 {(['png', 'jpg'] as const).map((f) => (

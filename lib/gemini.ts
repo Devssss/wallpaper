@@ -7,6 +7,10 @@ const ai = new GoogleGenAI({
 export interface GeneratedImage {
   url: string;
   prompt: string;
+  style?: string;
+  aspectRatio?: string;
+  negativePrompt?: string;
+  creativity?: number;
 }
 
 export async function generateWallpapers(
@@ -70,7 +74,14 @@ export async function generateWallpapers(
         }
       }
       
-      return { url: imageUrl, prompt: vibe };
+      return { 
+        url: imageUrl, 
+        prompt: vibe,
+        style,
+        aspectRatio,
+        negativePrompt,
+        creativity: temperature
+      };
     });
 
     return await Promise.all(tasks);
