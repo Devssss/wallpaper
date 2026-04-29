@@ -25,13 +25,24 @@ export default function Home() {
   const [history, setHistory] = useState<GeneratedImage[][]>([]);
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
+  const [selectedStyle, setSelectedStyle] = useState<string>("Artistic");
+
+  const styles = [
+    { name: "Artistic", icon: "🎨" },
+    { name: "Photorealistic", icon: "📸" },
+    { name: "Anime", icon: "🎌" },
+    { name: "Abstract", icon: "🌀" },
+    { name: "Minimalist", icon: "⚪" },
+    { name: "Cyberpunk", icon: "🌃" }
+  ];
 
   // Load from local storage
   useEffect(() => {
     const saved = localStorage.getItem("vibewall-history-v1");
     if (saved) {
       try {
-        setHistory(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setTimeout(() => setHistory(parsed), 0);
       } catch (e) {
         console.error("Failed to load history", e);
       }
@@ -80,7 +91,7 @@ export default function Home() {
       if (results.length > 0) {
         setHistory(prev => [results, ...prev].slice(0, 10));
       }
-      const newImages = await generateWallpapers(prompt, selectedImage?.url, aspectRatio);
+      const newImages = await generateWallpapers(prompt, selectedImage?.url, aspectRatio, selectedStyle);
       setResults(newImages);
       setSelectedImage(null);
     } catch (err) {
@@ -170,6 +181,25 @@ export default function Home() {
               <ArrowRight size={24} />
             )}
           </button>
+        </div>
+
+        {/* Style Selector */}
+        <div className="grid grid-cols-3 gap-2 mt-4 pb-4 border-b border-white/5">
+          {styles.map((style) => (
+            <button
+              key={style.name}
+              onClick={() => setSelectedStyle(style.name)}
+              className={cn(
+                "flex items-center justify-center gap-1.5 py-2 rounded-xl text-[10px] font-bold transition-all border",
+                selectedStyle === style.name
+                  ? "bg-white/10 border-white/20 text-white"
+                  : "bg-white/5 border-transparent text-white/30 hover:text-white/50"
+              )}
+            >
+              <span>{style.icon}</span>
+              <span>{style.name}</span>
+            </button>
+          ))}
         </div>
 
         {/* Aspect Ratio Selector */}

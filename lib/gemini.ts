@@ -9,14 +9,25 @@ export interface GeneratedImage {
   prompt: string;
 }
 
-export async function generateWallpapers(vibe: string, referenceImage?: string, aspectRatio: string = "9:16"): Promise<GeneratedImage[]> {
+export async function generateWallpapers(vibe: string, referenceImage?: string, aspectRatio: string = "9:16", style: string = "Artistic"): Promise<GeneratedImage[]> {
   const model = "gemini-2.5-flash-image"; // Default image generation model
   
-  const prompt = `Create a striking artistic image (${aspectRatio} aspect ratio). 
+  const stylePrompts: Record<string, string> = {
+    "Artistic": "high-quality, professional digital art, aesthetic, trending on Pinterest",
+    "Photorealistic": "highly detailed, 8k resolution, cinematic lighting, realistic textures, sharp focus",
+    "Anime": "vibrant colors, stylized characters, studio ghibli or makoto shinkai style, expressive, clean lines",
+    "Abstract": "geometric shapes, fluid motion, experimental patterns, bold colors, conceptual",
+    "Minimalist": "simple, clean, negative space, soft tones, uncluttered, Zen-like",
+    "Cyberpunk": "neon lights, rainy nights, high-tech, futuristic, purple and cyan color palette, gritty"
+  };
+
+  const styleDescription = stylePrompts[style] || stylePrompts["Artistic"];
+
+  const prompt = `Create a striking image (${aspectRatio} aspect ratio). 
   Vibe: ${vibe}. 
-  Style: Artistic, high-quality, professional digital art, aesthetic, trending on Pinterest. 
+  Style: ${styleDescription}. 
   Resolution: High resolution, sharp details.
-  No text, no watermarks.`;
+  No text, no watermarks, no distortions.`;
 
   try {
     const contents: any = {
