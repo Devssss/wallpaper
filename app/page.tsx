@@ -26,6 +26,31 @@ export default function Home() {
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
 
+  // Load from local storage
+  useEffect(() => {
+    const saved = localStorage.getItem("vibewall-history-v1");
+    if (saved) {
+      try {
+        setHistory(JSON.parse(saved));
+      } catch (e) {
+        console.error("Failed to load history", e);
+      }
+    }
+  }, []);
+
+  // Save to local storage
+  useEffect(() => {
+    if (history.length >= 0) {
+      try {
+        // Limit to 5 batches to stay within localStorage limits (approx 5MB)
+        const pruned = history.slice(0, 5);
+        localStorage.setItem("vibewall-history-v1", JSON.stringify(pruned));
+      } catch (e) {
+        console.warn("Storage limit reached, could not save all history items", e);
+      }
+    }
+  }, [history]);
+
   const aspectClasses = {
     "9:16": "aspect-[9/16]",
     "16:9": "aspect-[16/9]",
@@ -321,7 +346,17 @@ export default function Home() {
       
       {/* Floating Vibe History Bar */}
       {!selectedImage && history.length > 0 && (
-         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md h-16 glass rounded-2xl border-white/5 flex items-center px-4 gap-3 overflow-x-auto hide-scrollbar shadow-2xl">
+         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md h-16 glass rounded-2xl border-white/5 flex items-center px-4 gap-3 overflow-x-auto hide-scrollbar shadow-2xl group/bar">
+           <button 
+             onClick={() => {
+               setHistory([]);
+               localStorage.removeItem("vibewall-history-v1");
+             }}
+             className="flex-shrink-0 text-white/20 hover:text-red-400 transition-colors"
+             title="Clear History"
+           >
+             <X size={16} />
+           </button>
            <div className="flex-shrink-0 text-cyan-400/40">
              <RefreshCcw size={16} />
            </div>
