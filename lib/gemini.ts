@@ -9,7 +9,14 @@ export interface GeneratedImage {
   prompt: string;
 }
 
-export async function generateWallpapers(vibe: string, referenceImage?: string, aspectRatio: string = "9:16", style: string = "Artistic"): Promise<GeneratedImage[]> {
+export async function generateWallpapers(
+  vibe: string, 
+  referenceImage?: string, 
+  aspectRatio: string = "9:16", 
+  style: string = "Artistic",
+  negativePrompt: string = "",
+  temperature: number = 1.0
+): Promise<GeneratedImage[]> {
   const model = "gemini-2.5-flash-image"; 
   
   const stylePrompts: Record<string, string> = {
@@ -47,9 +54,11 @@ export async function generateWallpapers(vibe: string, referenceImage?: string, 
         model,
         contents: { parts },
         config: {
+          temperature,
           imageConfig: {
             aspectRatio: aspectRatio as any,
-          }
+            negativePrompt: negativePrompt || undefined,
+          } as any
         }
       });
 

@@ -29,6 +29,9 @@ export default function Home() {
   const [selectedStyle, setSelectedStyle] = useState<string>("Artistic");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [negativePrompt, setNegativePrompt] = useState("");
+  const [creativity, setCreativity] = useState(1.0);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const styles = [
     { name: "Artistic", icon: "🎨" },
@@ -94,7 +97,14 @@ export default function Home() {
       if (results.length > 0) {
         setHistory(prev => [results, ...prev].slice(0, 10));
       }
-      const newImages = await generateWallpapers(prompt, selectedImage?.url, aspectRatio, selectedStyle);
+      const newImages = await generateWallpapers(
+        prompt, 
+        selectedImage?.url, 
+        aspectRatio, 
+        selectedStyle, 
+        negativePrompt, 
+        creativity
+      );
       setResults(newImages);
       setSelectedImage(null);
     } catch (err) {
@@ -287,6 +297,64 @@ export default function Home() {
               {ratio}
             </button>
           ))}
+        </div>
+
+        {/* Advanced Settings Toggle */}
+        <div className="mt-4 pt-4 border-t border-white/5">
+          <button 
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-white/30 hover:text-white transition-colors"
+          >
+            <div className={cn("transition-transform duration-300", showAdvanced ? "rotate-180" : "")}>
+              <ChevronLeft className="-rotate-90" size={12} />
+            </div>
+            Advanced Settings
+          </button>
+          
+          <AnimatePresence>
+            {showAdvanced && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden space-y-4 pt-4"
+              >
+                <div className="space-y-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-white/40 font-bold flex justify-between">
+                    <span>Negative Prompt</span>
+                    <span className="text-white/20 font-normal italic">Exclude these elements</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={negativePrompt}
+                    onChange={(e) => setNegativePrompt(e.target.value)}
+                    placeholder="blurry, distorted, text, low resolution..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500/50 transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="text-[10px] uppercase tracking-wider text-white/40 font-bold flex justify-between">
+                    <span>Creativity</span>
+                    <span className="text-cyan-400">{creativity.toFixed(1)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.1"
+                    max="2.0"
+                    step="0.1"
+                    value={creativity}
+                    onChange={(e) => setCreativity(parseFloat(e.target.value))}
+                    className="w-full accent-cyan-500 h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[8px] uppercase tracking-tighter text-white/20">
+                    <span>Steady</span>
+                    <span>Wild</span>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </motion.div>
 
