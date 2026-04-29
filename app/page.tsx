@@ -10,10 +10,11 @@ import {
   ArrowRight, 
   Loader2,
   Maximize2,
-  ChevronLeft
+  ChevronLeft,
+  Lightbulb
 } from "lucide-react";
 import { sdk } from "@farcaster/miniapp-sdk";
-import { generateWallpapers, GeneratedImage } from "@/lib/gemini";
+import { generateWallpapers, getVibeSuggestions, GeneratedImage } from "@/lib/gemini";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -26,6 +27,8 @@ export default function Home() {
   const [downloadFormat, setDownloadFormat] = useState<'png' | 'jpg'>('png');
   const [aspectRatio, setAspectRatio] = useState<"9:16" | "16:9" | "1:1" | "4:5">("9:16");
   const [selectedStyle, setSelectedStyle] = useState<string>("Artistic");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const styles = [
     { name: "Artistic", icon: "🎨" },
@@ -131,6 +134,19 @@ export default function Home() {
     document.body.removeChild(link);
   };
 
+  const handleGetSuggestions = async () => {
+    setLoadingSuggestions(true);
+    try {
+      const historyPrompts = history.map(batch => batch[0].prompt);
+      const newSuggestions = await getVibeSuggestions(historyPrompts);
+      setSuggestions(newSuggestions);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#020617] atmospheric-bg flex flex-col items-center p-4 pb-24 md:pb-4 overflow-x-hidden content-center">
       {/* Header */}
@@ -165,23 +181,76 @@ export default function Home() {
             placeholder="rainy cyberpunk lo-fi, neon reflections, ultra-detailed..."
             className="w-full bg-transparent border-none text-white placeholder:text-white/10 focus:ring-0 resize-none h-20 text-base font-medium leading-normal scrollbar-hide pr-12"
           />
-          <button
-            onClick={() => handleGenerate()}
-            disabled={loading || !vibe.trim()}
-            className={cn(
-              "absolute bottom-0 right-0 p-3 rounded-2xl transition-all duration-300 flex items-center justify-center",
-              loading || !vibe.trim() 
-                ? "text-white/10 cursor-not-allowed" 
-                : "text-cyan-400 hover:text-cyan-300 hover:scale-110 active:scale-90"
-            )}
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={24} />
-            ) : (
-              <ArrowRight size={24} />
-            )}
-          </button>
+          <div className="absolute bottom-0 right-0 flex items-center gap-1">
+            <button
+              onClick={handleGetSuggestions}
+              disabled={loadingSuggestions}
+              className={cn(
+                "p-3 rounded-2xl transition-all duration-300 flex items-center justify-center",
+                loadingSuggestions 
+                  ? "text-cyan-400/50 cursor-not-allowed" 
+                  : "text-white/20 hover:text-cyan-400 hover:scale-110 active:scale-90"
+              )}
+              title="Get AI Suggestions"
+            >
+              {loadingSuggestions ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                <Lightbulb size={20} />
+              )}
+            </button>
+            <button
+              onClick={() => handleGenerate()}
+              disabled={loading || !vibe.trim()}
+              className={cn(
+                "p-3 rounded-2xl transition-all duration-300 flex items-center justify-center",
+                loading || !vibe.trim() 
+                  ? "text-white/10 cursor-not-allowed" 
+                  : "text-cyan-400 hover:text-cyan-300 hover:scale-110 active:scale-90"
+              )}
+            >
+              {loading ? (
+                <Loader2 className="animate-spin" size={24} />
+              ) : (
+                <ArrowRight size={24} />
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* AI Suggestions Chips */}
+        <AnimatePresence>
+          {suggestions.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex flex-wrap gap-2 mt-2 pt-2 border-t border-white/5 overflow-hidden"
+            >
+              {suggestions.map((s, idx) => (
+                <motion.button
+                  key={idx}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  onClick={() => {
+                    setVibe(s);
+                    setSuggestions([]);
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-cyan-500/5 border border-cyan-500/20 text-[10px] text-cyan-400/80 hover:bg-cyan-500/10 hover:text-cyan-400 transition-all text-left max-w-full truncate"
+                >
+                  {s}
+                </motion.button>
+              ))}
+              <button 
+                onClick={() => setSuggestions([])}
+                className="px-2 py-1.5 text-[10px] text-white/20 hover:text-white/60"
+              >
+                <X size={12} />
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Style Selector */}
         <div className="grid grid-cols-3 gap-2 mt-4 pb-4 border-b border-white/5">
