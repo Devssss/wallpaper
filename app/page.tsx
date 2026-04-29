@@ -1,0 +1,255 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { 
+  Sparkles, 
+  Download, 
+  RefreshCcw, 
+  X, 
+  ArrowRight, 
+  Loader2,
+  Maximize2,
+  ChevronLeft
+} from "lucide-react";
+import { sdk } from "@farcaster/miniapp-sdk";
+import { generateWallpapers, GeneratedImage } from "@/lib/gemini";
+import { cn } from "@/lib/utils";
+
+export default function Home() {
+  const [vibe, setVibe] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<GeneratedImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<GeneratedImage | null>(null);
+  const [history, setHistory] = useState<GeneratedImage[][]>([]);
+  
+  // Farcaster SDK init
+  useEffect(() => {
+    const init = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (e) {
+        console.error("SDK Ready failed", e);
+      }
+    };
+    init();
+  }, []);
+
+  const handleGenerate = async (remixVibe?: string) => {
+    const prompt = remixVibe || vibe;
+    if (!prompt.trim()) return;
+
+    setLoading(true);
+    try {
+      if (results.length > 0) {
+        setHistory(prev => [results, ...prev].slice(0, 10));
+      }
+      const newImages = await generateWallpapers(prompt, selectedImage?.url);
+      setResults(newImages);
+      setSelectedImage(null);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownload = (imgUrl: string) => {
+    const link = document.createElement("a");
+    link.href = imgUrl;
+    link.download = `vibewall-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <main className="min-h-screen bg-[#020617] atmospheric-bg flex flex-col items-center p-4 pb-24 md:pb-4 overflow-x-hidden content-center">
+      {/* Header */}
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-lg mb-8 pt-8 px-2 flex justify-between items-center"
+      >
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white flex items-center gap-1">
+            Lumina <span className="text-cyan-400">Gen</span>
+          </h1>
+        </div>
+        <div className="w-10 h-10 rounded-2xl glass flex items-center justify-center text-white/40 hover:text-white transition-colors cursor-pointer">
+          <Maximize2 size={18} />
+        </div>
+      </motion.div>
+
+      {/* Input Section */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-lg glass rounded-3xl p-5 mb-8 overflow-hidden relative"
+      >
+        <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-400/60 mb-2 font-bold px-1">
+          Current Vibe
+        </div>
+        <div className="relative group">
+          <textarea
+            value={vibe}
+            onChange={(e) => setVibe(e.target.value)}
+            placeholder="rainy cyberpunk lo-fi, neon reflections, ultra-detailed..."
+            className="w-full bg-transparent border-none text-white placeholder:text-white/10 focus:ring-0 resize-none h-20 text-base font-medium leading-normal scrollbar-hide pr-12"
+          />
+          <button
+            onClick={() => handleGenerate()}
+            disabled={loading || !vibe.trim()}
+            className={cn(
+              "absolute bottom-0 right-0 p-3 rounded-2xl transition-all duration-300 flex items-center justify-center",
+              loading || !vibe.trim() 
+                ? "text-white/10 cursor-not-allowed" 
+                : "text-cyan-400 hover:text-cyan-300 hover:scale-110 active:scale-90"
+            )}
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={24} />
+            ) : (
+              <ArrowRight size={24} />
+            )}
+          </button>
+        </div>
+      </motion.div>
+
+      {/* Grid Results */}
+      <div className="w-full max-w-lg flex-1">
+        <AnimatePresence mode="wait">
+          {results.length > 0 ? (
+            <motion.div 
+              key="results"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-2 gap-3"
+            >
+              {results.map((img, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  onClick={() => setSelectedImage(img)}
+                  className="group relative aspect-[9/16] rounded-2xl overflow-hidden glass border-white/5 cursor-pointer active:scale-95 transition-all duration-300 shadow-lg"
+                >
+                  <img 
+                    src={img.url} 
+                    alt="Generated wallpaper" 
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                    <div className="p-2 rounded-full glass">
+                      <Maximize2 className="text-white" size={20} />
+                    </div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          ) : !loading && (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="w-20 h-20 rounded-3xl glass flex items-center justify-center mb-6 text-cyan-400/40 shadow-xl">
+                <Sparkles size={32} />
+              </div>
+              <p className="text-sm font-medium tracking-wide text-slate-500 uppercase">Input a vibe to manifest art</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {loading && results.length === 0 && (
+           <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Loader2 className="animate-spin text-cyan-400/40 mb-4" size={48} />
+            <p className="text-xs text-slate-500 uppercase tracking-widest animate-pulse">Engaging Neural Engines...</p>
+          </div>
+        )}
+      </div>
+
+      {/* Full Screen Overlay */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-xl flex flex-col items-center"
+          >
+            <div className="absolute top-0 left-0 right-0 h-20 flex items-center px-6 justify-between">
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="p-3 bg-white/5 rounded-2xl text-white hover:bg-white/10 transition-colors"
+              >
+                <ChevronLeft size={20} />
+              </button>
+              <p className="text-white/60 font-medium text-[10px] uppercase tracking-widest">{selectedImage.prompt}</p>
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="p-3 bg-white/5 rounded-2xl text-white hover:bg-white/10 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 w-full max-w-sm flex items-center justify-center p-6 mt-12">
+              <motion.img 
+                layoutId={`img-${selectedImage.url}`}
+                src={selectedImage.url} 
+                className="w-full h-full object-cover rounded-[32px] shadow-2xl border border-white/20"
+                referrerPolicy="no-referrer"
+              />
+            </div>
+
+            <div className="w-full max-w-sm p-6 grid grid-cols-2 gap-3 pb-12">
+              <button
+                onClick={() => handleDownload(selectedImage.url)}
+                className="w-full bg-white text-slate-950 py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition-all active:scale-95 shadow-xl"
+              >
+                <Download size={20} />
+                Download
+              </button>
+              <button
+                onClick={() => handleGenerate(selectedImage.prompt)}
+                className="w-full bg-cyan-500 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-xl shadow-cyan-500/20 active:scale-95 hover:bg-cyan-400 transition-all"
+              >
+                <RefreshCcw size={20} />
+                Remix
+              </button>
+              <button 
+                onClick={() => setSelectedImage(null)}
+                className="col-span-2 text-slate-500 text-sm font-medium py-2"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Floating Vibe History Bar */}
+      {!selectedImage && history.length > 0 && (
+         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md h-16 glass rounded-2xl border-white/5 flex items-center px-4 gap-3 overflow-x-auto hide-scrollbar shadow-2xl">
+           <div className="flex-shrink-0 text-cyan-400/40">
+             <RefreshCcw size={16} />
+           </div>
+           {history.map((batch, i) => (
+             <button
+              key={i}
+              onClick={() => setResults(batch)}
+              className="flex-shrink-0 w-10 h-10 rounded-xl overflow-hidden border border-white/10 ring-2 ring-transparent hover:ring-cyan-500/40 transition-all"
+             >
+               <img src={batch[0].url} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+             </button>
+           ))}
+         </div>
+      )}
+    </main>
+  );
+}

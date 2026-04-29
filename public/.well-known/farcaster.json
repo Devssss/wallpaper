@@ -1,0 +1,19 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "VibeWall",
+    "homeUrl": "https://ais-dev-bxjgrvfnm6lhxkt4nxf3bl-615601803900.asia-southeast1.run.app",
+    "iconUrl": "https://picsum.photos/seed/vibewall-icon/512/512",
+    "splashImageUrl": "https://picsum.photos/seed/vibewall-splash/1024/1024",
+    "splashBackgroundColor": "#050505",
+    "subtitle": "AI-Generated Wallpapers",
+    "description": "Generate unique 9:16 phone wallpapers based on your vibe using Gemini AI.",
+    "primaryCategory": "social",
+    "tags": ["wallpaper", "ai", "art", "generative"]
+  }
+}
